@@ -11,11 +11,12 @@ http://www.gns3.net/qemu/
 This repository includes all necessary patches to Qemu v0.14.1 needed to work with GNS3.
 They include patches from http://www.gns3.net/qemu/, as well as additional new patches:
 
-```
 0001-qemu-0.14.1-fix-build-errors.patch - new patch which fixes build errors (tested on Ubuntu 14.04 64bit)
+
 0002-qemu-0.14.1-udp.patch - combines all patches from http://www.gns3.net/qemu/
+
 0003-qemu-0.14.1-monitor-udp.patch - new patch for new versions of GNS3 (after v1.2.2) needed to control running Qemu VMs
-```
+
 
 **Instructions how to use these patches for Qemu v0.14.1 on a Linux PC:**
 
