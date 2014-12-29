@@ -51,6 +51,7 @@ cp 0003-qemu-0.14.1-monitor-udp.patch path/to/qemu
 5 - Apply the patches in the right order:
 
 ```
+cd qemu
 patch -p1 -i 0001-qemu-0.14.1-fix-build-errors.patch
 patch -p1 -i 0002-qemu-0.14.1-udp.patch
 patch -p1 -i 0003-qemu-0.14.1-monitor-udp.patch
