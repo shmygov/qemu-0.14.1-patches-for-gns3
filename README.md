@@ -1,7 +1,7 @@
 qemu-0.14.1-patches-for-gns3
 ============================
 
-# Patches to Qemu v0.14.1 needed to work with GNS3
+**Patches to Qemu v0.14.1 needed to work with GNS3**
 
 Older Qemu releases v0.11.0 or v0.14.1 are better suited for running Cisco ASA on GNS3 than newest Qemu versions.
 However, Qemu releases before version 1.1 must be patched to work with GNS3.
@@ -17,7 +17,7 @@ They include patches from http://www.gns3.net/qemu/, as well as additional new p
 0003-qemu-0.14.1-monitor-udp.patch - new patch for new versions of GNS3 (after v1.2.2) needed to control running Qemu VMs
 ```
 
-# Instructions how to use these patches for Qemu v0.14.1 on a Linux PC:
+**Instructions how to use these patches for Qemu v0.14.1 on a Linux PC:**
 
 1 - Uninstall other Qemu versions if they are present on your PC, for example by simple file removal:
 
