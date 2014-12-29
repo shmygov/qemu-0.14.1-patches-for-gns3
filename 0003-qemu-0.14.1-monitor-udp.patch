@@ -1,0 +1,44 @@
+diff --git a/hmp-commands.hx b/hmp-commands.hx
+index 372bef4..a40b51c 100644
+--- a/hmp-commands.hx
++++ b/hmp-commands.hx
+@@ -936,7 +936,7 @@ ETEXI
+     {
+         .name       = "host_net_add",
+         .args_type  = "device:s,opts:s?",
+-        .params     = "tap|user|socket|vde|dump [options]",
++        .params     = "tap|user|socket|vde|udp|dump [options]",
+         .help       = "add host VLAN client",
+         .mhandler.cmd = net_host_device_add,
+     },
+diff --git a/net.c b/net.c
+index 06e7b57..1999390 100644
+--- a/net.c
++++ b/net.c
+@@ -1148,7 +1148,8 @@ int net_client_init(Monitor *mon, QemuOpts *opts, int is_netdev)
+ #ifdef CONFIG_VDE
+             strcmp(type, "vde") != 0 &&
+ #endif
+-            strcmp(type, "socket") != 0) {
++            strcmp(type, "socket") != 0 &&
++            strcmp(type, "udp") != 0) {
+             qerror_report(QERR_INVALID_PARAMETER_VALUE, "type",
+                           "a netdev backend type");
+             return -1;
+@@ -1210,7 +1211,7 @@ int net_client_init(Monitor *mon, QemuOpts *opts, int is_netdev)
+ static int net_host_check_device(const char *device)
+ {
+     int i;
+-    const char *valid_param_list[] = { "tap", "socket", "dump"
++    const char *valid_param_list[] = { "tap", "socket", "udp", "dump"
+ #ifdef CONFIG_SLIRP
+                                        ,"user"
+ #endif
+@@ -1384,6 +1385,7 @@ void net_check_clients(void)
+             case NET_CLIENT_TYPE_TAP:
+             case NET_CLIENT_TYPE_SOCKET:
+             case NET_CLIENT_TYPE_VDE:
++            case NET_CLIENT_TYPE_UDP:
+                 has_host_dev = 1;
+                 break;
+             default: ;

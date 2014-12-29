@@ -1,0 +1,153 @@
+diff --git a/configure b/configure
+index f2551b3..63706c4 100755
+--- a/configure
++++ b/configure
+@@ -2173,9 +2173,49 @@ fi
+ ##########################################
+ # Do we need librt
+ cat > $TMPC <<EOF
+-#include <signal.h>
++#include <unistd.h>
++#include <fcntl.h>
+ #include <time.h>
+-int main(void) { clockid_t id; return clock_gettime(id, NULL); }
++#include <errno.h>
++#include <sys/time.h>
++#include <signal.h>
++#ifdef __FreeBSD__
++#include <sys/param.h>
++#endif
++
++#ifdef __linux__
++#include <sys/ioctl.h>
++#include <linux/rtc.h>
++/* For the benefit of older linux systems which don't supply it,
++   we use a local copy of hpet.h. */
++/* #include <linux/hpet.h> */
++#endif
++
++#ifdef _WIN32
++#include <windows.h>
++#include <mmsystem.h>
++#endif
++
++int main(void) {
++    timer_t host_timer;
++    struct itimerspec timeout;
++    int64_t nearest_delta_ns = 250000;
++
++    /* check whether a timer is already running */
++    if (timer_gettime(host_timer, &timeout)) {
++        return 1;
++    }
++
++    timeout.it_interval.tv_sec = 0;
++    timeout.it_interval.tv_nsec = 0; /* 0 for one-shot timer */
++    timeout.it_value.tv_sec =  nearest_delta_ns / 1000000000;
++    timeout.it_value.tv_nsec = nearest_delta_ns % 1000000000;
++    if (timer_settime(host_timer, 0 /* RELATIVE */, &timeout, NULL)) {
++        return 1;
++    }
++
++    return 0;
++}
+ EOF
+ 
+ if compile_prog "" "" ; then
+diff --git a/hw/eepro100.c b/hw/eepro100.c
+index edf48f6..9b7e2d8 100644
+--- a/hw/eepro100.c
++++ b/hw/eepro100.c
+@@ -47,6 +47,7 @@
+ #include "net.h"
+ #include "eeprom93xx.h"
+ #include "sysemu.h"
++#include "qemu-common.h"
+ 
+ #define KiB 1024
+ 
+@@ -96,9 +97,6 @@
+ #define PCI_IO_SIZE             64
+ #define PCI_FLASH_SIZE          (128 * KiB)
+ 
+-#define BIT(n) (1 << (n))
+-#define BITS(n, m) (((0xffffffffU << (31 - n)) >> (31 - n + m)) << m)
+-
+ /* The SCB accepts the following controls for the Tx and Rx units: */
+ #define  CU_NOP         0x0000  /* No operation. */
+ #define  CU_START       0x0010  /* CU start. */
+diff --git a/libfdt_env.h b/libfdt_env.h
+index ee0419f..d0e71cf 100644
+--- a/libfdt_env.h
++++ b/libfdt_env.h
+@@ -25,6 +25,18 @@
+ #include <endian.h>
+ #include <byteswap.h>
+ 
++#ifdef __CHECKER__
++#define __force __attribute__((force))
++#define __bitwise __attribute__((bitwise))
++#else
++#define __force
++#define __bitwise
++#endif
++
++typedef uint16_t __bitwise fdt16_t;
++typedef uint32_t __bitwise fdt32_t;
++typedef uint64_t __bitwise fdt64_t;
++
+ #if __BYTE_ORDER == __BIG_ENDIAN
+ #define fdt32_to_cpu(x)		(x)
+ #define cpu_to_fdt32(x)		(x)
+diff --git a/linux-user/signal.c b/linux-user/signal.c
+index b01bd64..8ea86de 100644
+--- a/linux-user/signal.c
++++ b/linux-user/signal.c
+@@ -3241,7 +3241,7 @@ struct target_signal_frame {
+ };
+ 
+ struct rt_signal_frame {
+-    struct siginfo info;
++    siginfo_t info;
+     struct ucontext uc;
+     uint32_t tramp[2];
+ };
+@@ -3459,9 +3459,9 @@ struct target_signal_frame {
+ };
+ 
+ struct rt_signal_frame {
+-        struct siginfo *pinfo;
++        siginfo_t *pinfo;
+         void *puc;
+-        struct siginfo info;
++        siginfo_t info;
+         struct ucontext uc;
+         uint8_t retcode[8];       /* Trampoline code. */
+ };
+diff --git a/qemu-common.h b/qemu-common.h
+index cb4b7e0..e8b7365 100644
+--- a/qemu-common.h
++++ b/qemu-common.h
+@@ -35,6 +35,9 @@ typedef struct DeviceState DeviceState;
+ #include <sys/stat.h>
+ #include <assert.h>
+ 
++#define BIT(n) (1 << (n))
++#define BITS(n, m) (((0xffffffffU << (31 - n)) >> (31 - n + m)) << m)
++
+ #ifndef O_LARGEFILE
+ #define O_LARGEFILE 0
+ #endif
+diff --git a/qemu-doc.texi b/qemu-doc.texi
+index 86e017c..01c4313 100644
+--- a/qemu-doc.texi
++++ b/qemu-doc.texi
+@@ -224,7 +224,7 @@ VGA BIOS.
+ QEMU uses YM3812 emulation by Tatsuyuki Satoh.
+ 
+ QEMU uses GUS emulation (GUSEMU32 @url{http://www.deinmeister.de/gusemu/})
+-by Tibor "TS" Schütz.
++by Tibor "TS" Schutz.
+ 
+ Not that, by default, GUS shares IRQ(7) with parallel ports and so
+ qemu must be told to not have parallel ports to have working GUS
